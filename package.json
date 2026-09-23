@@ -9,6 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
+    "measure": "node scripts/measure.js",
     "test:browser": "playwright test",
     "test:browser:dist": "playwright test --config=playwright.dist.config.js"
   },
