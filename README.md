@@ -12,7 +12,8 @@ runtime dependencies beyond the Vite dev/build tooling.
 | `npm install` | Install Vite (the only dev dependency). |
 | `npm run dev` | Start the Vite dev server with hot reload. |
 | `npm test` | Run the headless `node:test` suite. |
-| `npm run test:browser` | Run the Playwright browser tests (autoplay guard, mute persistence). |
+| `npm run test:browser` | Run the Playwright browser tests (autoplay guard, mute persistence, portal journey). |
+| `npm run test:browser:dist` | Build, serve `dist/` statically and run the portal journey against the production bundle. |
 | `npm run build` | Build the static production bundle into `dist/`. |
 | `npm run preview` | Serve the built `dist/` bundle locally. |
 
@@ -42,9 +43,9 @@ vite.config.js        # Vite configuration (root, relative base, dist/ output)
 src/
   main.js             # application entry; imports styles and bootstraps
   core/               # shared helpers (e.g. dom.js)
-  portal/             # home page view, game registry, keyboard navigation
+  portal/             # home page view, registry, keyboard nav, cover art, boot, app controller
   games/              # game modules, starting with River Raid (T-198..T-201)
-    river-raid/       # pure simulation + render, input, sound-events and audio adapters
+    river-raid/       # pure simulation + render, input, sound-events, audio, high scores
   styles/
     tokens.css        # design-token CSS custom properties (palette, type, spacing)
     base.css          # baseline layout consuming the tokens
@@ -71,6 +72,37 @@ as a cyberpunk C64/Amiga demo screen — dark palette, neon cyan/magenta glow on
 the title and focused card, period display/mono typography, and a visible CRT
 scanline overlay.
 
+## Portal integration (T-202)
+
+The portal home page launches the game directly: `src/portal/index.js` owns the
+home view, the launch/boot/exit transitions and the audio lifecycle.
+
+- **PLAYABLE card + cover art.** River Raid is `PLAYABLE` through the registry
+  availability flag (T-200 already flipped it, so T-202 makes no flag edit). The
+  cover is drawn procedurally on a canvas from the game's registry metadata
+  (`src/portal/cover-art.js`) — no binary art assets.
+- **C64 boot sequence.** Launching a game shows a Commodore 64-style loading
+  screen (`src/portal/boot.js`) before the canvas takes over; `Enter`/`Space`
+  skips it.
+- **Clean exit.** `Escape` (or the on-screen exit button) returns to the portal,
+  stops the game loop, releases the keyboard listeners and disposes the audio
+  layer (suspend/close the `AudioContext`, stop the engine hum). It is a no-op
+  when WebAudio was never instantiated. The game canvas is created once and
+  reused, so repeated play does not leak 2D contexts.
+- **High scores.** The top five scores persist in `localStorage`
+  (`river-raid.highscores`, `src/games/river-raid/high-scores.js`) and appear on
+  the game-over screen and on the portal card.
+- **Keyboard-only journey.** `Tab` focuses a card, `Enter` launches it, arrows
+  play, and `Escape` returns to the portal — no mouse required.
+
+`window.__riverRaid.getStatus()` is a deterministic loop-status hook (`running`,
+`ticks`, `frame`, `gameOver`, ...) so a stopped loop is provable in tests
+without console capture.
+
+The automated journey test lives in `tests/browser/portal-journey.spec.js`
+(`npm run test:browser`), and `npm run test:browser:dist` runs the same journey
+against the statically served `dist/` bundle.
+
 ## River Raid gameplay
 
 The gameplay layer lives in `src/games/river-raid/` on top of the pure
@@ -91,8 +123,9 @@ playable, and the last destroyed bridge becomes the respawn checkpoint
 (before the first bridge, respawn still uses the current segment start).
 Scoring per target: depot 80, ship 30, helicopter 60, bridge 500.
 
-Portal integration is T-202's scope, so the game is reachable through the dev
-harness at `/game.html` while the home page stays the default entry:
+The portal home page launches the game directly (see "Portal integration"
+above). The standalone dev harness at `/game.html` still mounts the game on its
+own canvas for focused gameplay work:
 
 ```sh
 npm run dev        # then open http://localhost:5173/game.html

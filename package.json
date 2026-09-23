@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:browser:dist": "playwright test --config=playwright.dist.config.js"
   },
   "devDependencies": {
     "@playwright/test": "1.59.0",

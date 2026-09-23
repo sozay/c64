@@ -7,14 +7,37 @@
   </head>
   <body>
     <div class="scanlines" aria-hidden="true"></div>
-    <div id="app"></div>
-    <canvas
-      id="game-canvas"
-      width="640"
-      height="400"
-      aria-label="Game rendering surface"
-      hidden
-    ></canvas>
+    <main id="app">
+      <section id="game-view" class="game-view" aria-label="Game view" hidden>
+        <div id="boot-screen" class="boot-screen" role="status" aria-live="polite" hidden>
+          <p class="boot-screen__line">**** COMMODORE 64 BASIC V2 ****</p>
+          <p class="boot-screen__line">64K RAM SYSTEM  38911 BASIC BYTES FREE</p>
+          <p class="boot-screen__line boot-screen__line--action" data-boot-action>
+            SEARCHING FOR RIVER RAID
+          </p>
+          <p class="boot-screen__line boot-screen__line--progress" data-boot-progress>
+            LOADING
+          </p>
+          <div class="boot-screen__bar">
+            <span class="boot-screen__bar-fill" data-boot-bar></span>
+          </div>
+          <p class="boot-screen__line boot-screen__hint">PRESS ENTER TO SKIP</p>
+        </div>
+        <canvas
+          id="game-canvas"
+          width="640"
+          height="400"
+          aria-label="River Raid game surface"
+          hidden
+        ></canvas>
+        <div class="game-view__controls">
+          <button id="game-exit" class="game-view__exit" type="button">
+            EXIT TO PORTAL (ESC)
+          </button>
+        </div>
+        <p id="game-status" class="game-view__status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

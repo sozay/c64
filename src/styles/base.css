@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+/* The portal and game views are flex containers, so the native hidden
+   attribute needs to win over their display value when a view is inactive. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;

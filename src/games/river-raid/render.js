@@ -19,13 +19,21 @@ import { bankAt, segmentIndexFor } from './terrain.js';
 export function createRenderer(canvas) {
   const context = canvas.getContext('2d');
   return {
-    draw(state) {
-      render(context, state);
+    draw(state, extras) {
+      render(context, state, extras);
+    },
+    // Clears the surface when a game is torn down so the next launch starts
+    // from a blank canvas instead of a stale frame.
+    clear() {
+      context.clearRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     },
   };
 }
 
-export function render(context, state) {
+// `extras` carries render-only data the pure simulation does not own: the
+// persisted high-score table and whether this run set a new best (T-202). It
+// defaults to an empty table so existing two-argument callers keep working.
+export function render(context, state, extras = {}) {
   context.fillStyle = COLORS.sky;
   context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
@@ -88,7 +96,7 @@ export function render(context, state) {
   );
 
   drawHud(context, state);
-  if (state.gameOver) drawGameOver(context, state);
+  if (state.gameOver) drawGameOver(context, state, extras);
 }
 
 // C64-style status band: score, level, lives and a fuel gauge, all drawn on
@@ -136,7 +144,12 @@ function drawFuelGauge(context, state, x, y, width, height) {
   context.restore();
 }
 
-function drawGameOver(context, state) {
+// Game-over screen: final score, the persisted top-5 high-score table (T-202)
+// and the keyboard hints for restart and returning to the portal.
+function drawGameOver(context, state, { highScores = [], isNewHighScore = false } = {}) {
+  const mono = '"Courier New", ui-monospace, monospace';
+  const center = WORLD_WIDTH / 2;
+
   context.save();
   context.fillStyle = COLORS.gameOverPanel;
   context.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -144,21 +157,46 @@ function drawGameOver(context, state) {
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillStyle = COLORS.jetCollided;
-  context.font = 'bold 44px "Courier New", ui-monospace, monospace';
-  context.fillText('GAME OVER', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 70);
+  context.font = `bold 40px ${mono}`;
+  context.fillText('GAME OVER', center, 78);
 
   context.fillStyle = COLORS.hud;
-  context.font = 'bold 20px "Courier New", ui-monospace, monospace';
-  context.fillText(`FINAL SCORE ${state.score}`, WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 10);
+  context.font = `bold 20px ${mono}`;
+  context.fillText(`FINAL SCORE ${state.score}`, center, 122);
+  context.font = `bold 14px ${mono}`;
   context.fillText(
     `LEVEL ${state.level} \u00b7 REASON ${String(state.gameOverReason).toUpperCase()}`,
-    WORLD_WIDTH / 2,
-    WORLD_HEIGHT / 2 + 22,
+    center,
+    148,
   );
 
+  if (isNewHighScore) {
+    context.fillStyle = COLORS.jetAccent;
+    context.font = `bold 16px ${mono}`;
+    context.fillText('NEW HIGH SCORE!', center, 174);
+  }
+
+  context.fillStyle = COLORS.hud;
+  context.font = `bold 14px ${mono}`;
+  context.fillText('HIGH SCORES', center, 200);
+
+  const top = Array.isArray(highScores) ? highScores.slice(0, 5) : [];
+  if (top.length === 0) {
+    context.fillStyle = COLORS.shipAccent;
+    context.fillText('NO SCORES YET', center, 222);
+  } else {
+    top.forEach((value, index) => {
+      context.fillStyle = index === 0 ? COLORS.jetAccent : COLORS.hud;
+      context.fillText(`${index + 1}. ${String(value).padStart(6, '0')}`, center, 222 + index * 20);
+    });
+  }
+
   context.fillStyle = COLORS.jetAccent;
-  context.font = 'bold 16px "Courier New", ui-monospace, monospace';
-  context.fillText('PRESS ENTER TO RESTART', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 70);
+  context.font = `bold 16px ${mono}`;
+  context.fillText('PRESS ENTER TO RESTART', center, 344);
+  context.fillStyle = COLORS.hud;
+  context.font = `bold 13px ${mono}`;
+  context.fillText('ESC \u2014 EXIT TO PORTAL', center, 368);
   context.restore();
 }
 

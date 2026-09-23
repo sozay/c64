@@ -125,19 +125,16 @@ body {
   border-color: var(--neon-primary);
 }
 
+/* Procedurally drawn on a canvas (T-202): no binary art assets. */
 .game-card__cover {
   display: block;
+  width: 100%;
+  height: auto;
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
-  background:
-    repeating-linear-gradient(
-      135deg,
-      rgba(0, 0, 0, 0.25) 0 6px,
-      transparent 6px 12px
-    ),
-    linear-gradient(135deg, var(--neon-secondary), var(--neon-primary));
-  filter: saturate(0.8) brightness(0.75);
+  background: var(--color-bg);
+  image-rendering: pixelated;
 }
 
 .game-card__body {
@@ -183,6 +180,115 @@ body {
 
 .game-card__label[data-available='false'] {
   color: var(--color-text-muted);
+}
+
+.game-card__score {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--neon-accent);
+}
+
+/* --- Game view: boot sequence + canvas + exit control -------------------- */
+
+.game-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(720px, 100%);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+}
+
+.game-view:focus {
+  outline: none;
+}
+
+.boot-screen {
+  width: min(640px, 100%);
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 3px solid #6f6fdc;
+  border-radius: var(--radius-md);
+  background: #4040b0;
+  color: #d8d8ff;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  box-shadow: var(--neon-glow-primary);
+}
+
+.boot-screen__line {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.boot-screen__line--action {
+  color: var(--neon-accent);
+}
+
+.boot-screen__line--progress {
+  color: #ffffff;
+}
+
+.boot-screen__bar {
+  height: 14px;
+  margin-top: var(--space-2);
+  border: 1px solid #d8d8ff;
+  background: #20206a;
+  overflow: hidden;
+}
+
+.boot-screen__bar-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--neon-accent);
+  transition: width linear;
+}
+
+.boot-screen__hint {
+  margin-top: var(--space-2);
+  color: #b8b8ff;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+
+.game-view__exit {
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--neon-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.game-view__exit:hover,
+.game-view__exit:focus-visible {
+  color: var(--neon-secondary);
+  box-shadow: var(--neon-glow-secondary);
+  outline: none;
+}
+
+.game-view__status {
+  margin: 0;
+  min-height: 1.5em;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.game-view__status[data-status='loading'] {
+  color: var(--neon-primary);
+  text-shadow: var(--neon-text-glow);
 }
 
 .portal__status {

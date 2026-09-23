@@ -24,6 +24,12 @@ export const GAMES = Object.freeze([
     year: 1982,
     genre: 'Shoot \u2019em up',
     accent: 'primary',
+    // T-200 flipped this flag to PLAYABLE when it merged with the portal home
+    // page already present; T-202 therefore has no flag edit to make (the flip
+    // has exactly one owner on every path). `seed` and `highScoreKey` let the
+    // portal launch the game and surface its persisted best score.
+    seed: 7,
+    highScoreKey: 'river-raid.highscores',
   }),
 ]);
 

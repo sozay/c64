@@ -83,4 +83,32 @@ test('the renderer draws bridges and the game-over screen', () => {
   assert.ok(texts.includes('GAME OVER'), 'game-over title is shown');
   assert.ok(texts.includes('FINAL SCORE 500'), 'final score is shown');
   assert.ok(texts.includes('PRESS ENTER TO RESTART'), 'restart hint is shown');
+  assert.ok(texts.includes('ESC \u2014 EXIT TO PORTAL'), 'exit hint is shown');
+});
+
+test('the game-over screen lists the persisted top-5 high scores', () => {
+  const state = createInitialState(7);
+  state.score = 900;
+  state.gameOver = true;
+  state.gameOverReason = 'bank';
+
+  const context = recordingContext();
+  render(context, state, { highScores: [900, 500, 100], isNewHighScore: true });
+  const texts = textsOf(context);
+
+  assert.ok(texts.includes('HIGH SCORES'), 'table heading is shown');
+  assert.ok(texts.includes('1. 000900'), 'best score is ranked first');
+  assert.ok(texts.includes('2. 000500'), 'second score is shown');
+  assert.ok(texts.includes('3. 000100'), 'third score is shown');
+  assert.ok(texts.includes('NEW HIGH SCORE!'), 'a new best is called out');
+});
+
+test('the game-over screen degrades to a placeholder with no scores', () => {
+  const state = createInitialState(7);
+  state.gameOver = true;
+  state.gameOverReason = 'fuel';
+
+  const context = recordingContext();
+  render(context, state);
+  assert.ok(textsOf(context).includes('NO SCORES YET'));
 });
