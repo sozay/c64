@@ -1,7 +1,8 @@
 import './styles/tokens.css';
 import './styles/base.css';
+import './styles/portal.css';
 import { selectElement } from './core/dom.js';
-import { mount } from './games/river-raid/index.js';
+import { mount } from './portal/index.js';
 
-const canvas = selectElement('#game-canvas');
-mount(canvas, { seed: 7 });
+const app = selectElement('#app');
+mount(app);

@@ -31,4 +31,20 @@
   --radius-md: 8px;
   --canvas-width: 640px;
   --canvas-height: 400px;
+
+  /* Neon accents (cyberpunk glow) */
+  --neon-primary: #00e5ff;
+  --neon-secondary: #ff2fb9;
+  --neon-accent: #f9f871;
+  --neon-glow-primary:
+    0 0 4px var(--neon-primary), 0 0 14px rgba(0, 229, 255, 0.6);
+  --neon-glow-secondary:
+    0 0 4px var(--neon-secondary), 0 0 14px rgba(255, 47, 185, 0.6);
+  --neon-text-glow:
+    0 0 6px rgba(0, 229, 255, 0.8), 0 0 18px rgba(255, 47, 185, 0.45);
+
+  /* CRT scanline overlay */
+  --scanline-color: rgba(0, 0, 0, 0.35);
+  --scanline-size: 3px;
+  --scanline-opacity: 0.55;
 }

@@ -30,7 +30,7 @@ vite.config.js        # Vite configuration (root, relative base, dist/ output)
 src/
   main.js             # application entry; imports styles and bootstraps
   core/               # shared helpers (e.g. dom.js)
-  portal/             # portal shell and game registry (filled in by T-197)
+  portal/             # home page view, game registry, keyboard navigation
   games/              # game modules, starting with River Raid (T-198..T-201)
   styles/
     tokens.css        # design-token CSS custom properties (palette, type, spacing)
@@ -38,6 +38,24 @@ src/
 scripts/              # Node tooling (e.g. headless simulation drivers)
 tests/                # node:test suites (environment + scaffolding)
 ```
+
+## Portal home page
+
+`src/main.js` mounts the portal home page (`src/portal/index.js`), which renders
+one card per entry in the games registry (`src/portal/registry.js`). Availability
+flags drive card labels (`PLAYABLE` / `COMING SOON`), so flipping a flag is a
+one-line data change with no UI edits.
+
+Keyboard-only navigation: `Tab` moves focus through the cards in order; arrow
+keys and `Home`/`End` move focus directly; `Enter`/`Space` activates the focused
+card. Activating an unavailable game writes visible feedback to the
+`role="status"` element (`[data-status="unavailable"]`) and does not navigate.
+
+Subjective visual check (manual, alongside the objective checks in
+`tests/portal-home.test.js`): with `npm run dev` open, the home page should read
+as a cyberpunk C64/Amiga demo screen — dark palette, neon cyan/magenta glow on
+the title and focused card, period display/mono typography, and a visible CRT
+scanline overlay.
 
 ## Conventions
 

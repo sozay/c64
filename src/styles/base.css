@@ -20,11 +20,11 @@ body {
 }
 
 #app {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   min-height: 100vh;
-  padding: var(--space-3);
+}
+
+#game-canvas[hidden] {
+  display: none;
 }
 
 #game-canvas {
