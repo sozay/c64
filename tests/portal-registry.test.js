@@ -36,12 +36,13 @@ test('every game has the card metadata the home page renders', () => {
   }
 });
 
-test('river-raid is registered and not yet playable at T-197 merge time', () => {
+test('river-raid is registered and PLAYABLE after the T-200 flag flip', () => {
   const riverRaid = getGame('river-raid');
   assert.ok(riverRaid, 'river-raid should be registered');
-  assert.equal(riverRaid.available, false);
-  assert.equal(isPlayable(riverRaid), false);
-  assert.equal(availabilityOf(riverRaid), AVAILABILITY.unavailable);
+  assert.equal(riverRaid.available, true);
+  assert.equal(isPlayable(riverRaid), true);
+  assert.equal(availabilityOf(riverRaid), AVAILABILITY.available);
+  assert.equal(cardLabel(riverRaid), 'PLAYABLE');
 });
 
 test('getGame returns null for an unknown id', () => {
@@ -62,8 +63,8 @@ test('availability flag drives the card label', () => {
 
 test('a one-line availability flip changes the label with no other edits', () => {
   const riverRaid = getGame('river-raid');
-  const flipped = { ...riverRaid, available: true };
-  assert.equal(cardLabel(riverRaid), 'COMING SOON');
-  assert.equal(cardLabel(flipped), 'PLAYABLE');
-  assert.equal(isPlayable(flipped), true);
+  const flipped = { ...riverRaid, available: false };
+  assert.equal(cardLabel(riverRaid), 'PLAYABLE');
+  assert.equal(cardLabel(flipped), 'COMING SOON');
+  assert.equal(isPlayable(flipped), false);
 });

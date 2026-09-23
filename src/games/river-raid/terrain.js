@@ -16,6 +16,11 @@ import {
   INITIAL_SEGMENTS,
   DEPOT_CHANCE,
   DEPOT_COUNTER_BASE,
+  BRIDGE_FIRST_SEGMENT,
+  BRIDGE_INTERVAL,
+  BRIDGE_INTERVAL_JITTER,
+  BRIDGE_MIN_INTERVAL,
+  BRIDGE_COUNTER_BASE,
 } from './constants.js';
 import { randomBetween, random01, clamp, lerp } from './prng.js';
 
@@ -82,6 +87,26 @@ export function depotForSegment(seed, index) {
   if (roll >= DEPOT_CHANCE) return null;
   const lateral = random01(seed, DEPOT_COUNTER_BASE + index * 4 + 1);
   return { lateral };
+}
+
+// The terrain generator places level-checkpoint bridges on segment boundaries.
+// Placement is a pure function of (seed, segment index): the first bridge sits
+// at BRIDGE_FIRST_SEGMENT and subsequent bridges follow at a seed-jittered
+// interval, so the same seed always yields the same checkpoints. Returns null
+// or { worldY } where worldY is the segment boundary the bridge spans.
+export function bridgeForSegment(seed, index) {
+  if (index < BRIDGE_FIRST_SEGMENT) return null;
+  const jitter = Math.round(
+    randomBetween(
+      seed,
+      BRIDGE_COUNTER_BASE,
+      -BRIDGE_INTERVAL_JITTER,
+      BRIDGE_INTERVAL_JITTER,
+    ),
+  );
+  const interval = Math.max(BRIDGE_MIN_INTERVAL, BRIDGE_INTERVAL + jitter);
+  if ((index - BRIDGE_FIRST_SEGMENT) % interval !== 0) return null;
+  return { worldY: index * SEGMENT_HEIGHT };
 }
 
 // Returns the interpolated river cross-section at a world row. This read may

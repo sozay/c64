@@ -22,11 +22,11 @@ function report() {
   const { state } = game;
   if (state.gameOver) {
     status.dataset.status = 'game-over';
-    status.textContent = `GAME OVER (${state.gameOverReason}) \u2014 reload to retry.`;
-    return;
+    status.textContent = `GAME OVER (${state.gameOverReason}) \u2014 FINAL SCORE ${state.score} \u2014 press Enter to restart.`;
+  } else {
+    status.dataset.status = 'playing';
+    status.textContent = `SCORE ${state.score} \u00b7 LEVEL ${state.level} \u00b7 FUEL ${Math.round(state.fuel)} \u00b7 LIVES ${state.lives}`;
   }
-  status.dataset.status = 'playing';
-  status.textContent = `FUEL ${Math.round(state.fuel)} \u00b7 LIVES ${state.lives}`;
   requestAnimationFrame(report);
 }
 

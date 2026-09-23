@@ -44,7 +44,8 @@ tests/                # node:test suites (environment + scaffolding)
 `src/main.js` mounts the portal home page (`src/portal/index.js`), which renders
 one card per entry in the games registry (`src/portal/registry.js`). Availability
 flags drive card labels (`PLAYABLE` / `COMING SOON`), so flipping a flag is a
-one-line data change with no UI edits.
+one-line data change with no UI edits. T-200 flips River Raid to `PLAYABLE`
+now that core gameplay is complete.
 
 Keyboard-only navigation: `Tab` moves focus through the cards in order; arrow
 keys and `Home`/`End` move focus directly; `Enter`/`Space` activates the focused
@@ -59,16 +60,23 @@ scanline overlay.
 
 ## River Raid gameplay
 
-The fuel/combat layer lives in `src/games/river-raid/` on top of the pure
+The gameplay layer lives in `src/games/river-raid/` on top of the pure
 simulation core: terrain-placed fuel depots, ships and helicopters, a single
-bullet in flight, lives, and a game-over placeholder. Everything is a pure
-function of the seed plus the input sequence, so `scripts/simulate.js` can
-fingerprint it:
+bullet in flight, lives, level-checkpoint bridges, scoring, a C64-style HUD and
+a game-over screen. Everything is a pure function of the seed plus the input
+sequence, so `scripts/simulate.js` can fingerprint it:
 
 ```sh
 node scripts/simulate.js --game river-raid --seed 7 --frames 7200
 # two runs with the same seed and input print an identical hash
 ```
+
+Progression (T-200): destroying a bridge (500 points) advances the level and
+awards a fuel bonus (`remaining fuel x 5`). Each level raises the baseline
+scroll speed and the enemy spawn density, both capped so a long run stays
+playable, and the last destroyed bridge becomes the respawn checkpoint
+(before the first bridge, respawn still uses the current segment start).
+Scoring per target: depot 80, ship 30, helicopter 60, bridge 500.
 
 Portal integration is T-202's scope, so the game is reachable through the dev
 harness at `/game.html` while the home page stays the default entry:
@@ -78,12 +86,22 @@ npm run dev        # then open http://localhost:5173/game.html
 ```
 
 Controls: arrow keys / `A`-`D` steer, `Up` / `W` throttle, `Space` (or `J`)
-fires. The harness prints a `FUEL`/`LIVES` readout and the game-over reason;
-the simulation itself keeps no HUD. Flying over a depot refuels the tank once,
-a bullet is consumed by the first enemy or depot it hits, and a crash (bank,
-enemy, or empty tank) costs a life and respawns the jet over the river at the
-current segment. `npm run dev` is the documented manual check: fly, shoot,
-destroy targets, refuel, crash, and reach the game-over placeholder.
+fires, and `Enter` (or `R`) restarts after game over. The canvas draws the HUD
+(score, level, lives, fuel gauge) and the game-over screen (final score plus
+restart hint); the dev harness also prints the same numbers. Flying over a
+depot refuels the tank once, a bullet is consumed by the first enemy, depot or
+bridge it hits, and a crash (bank, enemy, or empty tank) costs a life and
+respawns the jet at the last checkpoint. `npm run dev` is the documented manual
+check: fly, shoot, destroy at least two bridges, watch the level and speed
+climb, refuel, crash, reach game over, and restart.
+
+For a deterministic headless run that exercises bridges, levels and scoring,
+use the state-aware autopilot input:
+
+```sh
+node scripts/simulate.js --game river-raid --seed 7 --frames 7200 --input pilot --json
+# reports score, level, bridgesDestroyed, checkpointY and bridges in the JSON
+```
 
 ## Conventions
 

@@ -71,6 +71,41 @@ test('combat input changes the deterministic hash', () => {
   assert.notEqual(hashOf(neutral), hashOf(combat));
 });
 
+test('the JSON report covers the progression state', () => {
+  const json = JSON.parse(
+    run(['--game', 'river-raid', '--seed', '7', '--frames', '7200', '--json']),
+  );
+  assert.equal(typeof json.score, 'number');
+  assert.equal(typeof json.level, 'number');
+  assert.equal(typeof json.bridgesDestroyed, 'number');
+  assert.equal(typeof json.bridges, 'number');
+  assert.ok('checkpointY' in json);
+});
+
+test('the pilot run destroys bridges and advances levels deterministically', () => {
+  const args = [
+    '--game',
+    'river-raid',
+    '--seed',
+    '7',
+    '--frames',
+    '7200',
+    '--input',
+    'pilot',
+    '--json',
+  ];
+  const first = JSON.parse(run(args));
+  const second = JSON.parse(run(args));
+
+  assert.equal(first.hash, second.hash, 'same seed + pilot input must match');
+  assert.ok(
+    first.bridgesDestroyed >= 2,
+    `expected at least 2 bridges destroyed, got ${first.bridgesDestroyed}`,
+  );
+  assert.ok(first.level > 1, `expected a level advance, got ${first.level}`);
+  assert.ok(first.score > 0, 'score accumulates from destroyed targets');
+});
+
 test('the driver documents the neutral default input', () => {
   assert.match(run(['--help']), /neutral/);
 });

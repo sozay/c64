@@ -39,6 +39,10 @@ export function hashState(state) {
     `respawnGrace=${state.respawnGrace}`,
     `gameOver=${state.gameOver ? 1 : 0}`,
     `gameOverReason=${state.gameOverReason ?? 'none'}`,
+    `score=${state.score}`,
+    `level=${state.level}`,
+    `bridgesDestroyed=${state.bridgesDestroyed}`,
+    `checkpointY=${state.checkpointY == null ? 'none' : fixed(state.checkpointY)}`,
     `bullet=${state.bullet ? `${fixed(state.bullet.x)},${fixed(state.bullet.worldY)}` : 'none'}`,
     `entities=${state.entities.length}`,
   ];

@@ -65,6 +65,40 @@ export const INITIAL_LIVES = 3;
 // cannot immediately repeat; the bank and fuel rules still apply.
 export const RESPAWN_INVULNERABLE_FRAMES = 90;
 
+// Bridges (T-200). A bridge spans the full navigable river at a segment
+// boundary and is a pure function of the seed plus the segment index (see
+// terrain.bridgeForSegment). Destroying it advances the level and awards the
+// bridge score plus a fuel bonus.
+export const BRIDGE_FIRST_SEGMENT = 10;
+export const BRIDGE_INTERVAL = 12;
+export const BRIDGE_INTERVAL_JITTER = 3;
+export const BRIDGE_MIN_INTERVAL = 8;
+export const BRIDGE_COUNTER_BASE = 0x40000000;
+export const BRIDGE_HALF_HEIGHT = 6;
+export const BRIDGE_SCORE = 500;
+
+// Scoring (T-200). Points per destroyed target, matching the original River
+// Raid feel. Depots award 80, ships 30, helicopters 60 and bridges 500.
+export const SCORE_VALUES = Object.freeze({
+  depot: 80,
+  ship: 30,
+  helicopter: 60,
+  bridge: BRIDGE_SCORE,
+});
+
+// Level progression (T-200). Each destroyed bridge advances the level, which
+// scales the baseline scroll speed and the enemy spawn density. Both scalings
+// are capped so a long run stays playable; bridges remain a pure function of
+// the seed, so the level is deterministic for a given input sequence.
+export const LEVEL_SPEED_STEP = 0.1;
+export const LEVEL_DENSITY_STEP = 0.2;
+export const MAX_SPEED_MULTIPLIER = 2.5;
+export const MAX_ENEMY_CHANCE = 0.85;
+
+// Fuel bonus (T-200): awarded when a bridge is destroyed, scaled by the fuel
+// left in the tank at that moment.
+export const FUEL_BONUS_PER_UNIT = 5;
+
 // Entity lifecycle. Spawns are generated ahead of the leading edge and dropped
 // once they scroll behind the trailing edge.
 export const SPAWN_AHEAD_SEGMENTS = 4;
@@ -86,4 +120,11 @@ export const COLORS = Object.freeze({
   helicopter: '#d29aec',
   helicopterAccent: '#8a5aa8',
   bullet: '#f6f6b0',
+  bridge: '#d8d8c8',
+  bridgeAccent: '#7d7d6a',
+  hud: '#8fe0ff',
+  hudPanel: 'rgba(6, 10, 20, 0.72)',
+  fuelHigh: '#4fd1ff',
+  fuelLow: '#e05050',
+  gameOverPanel: 'rgba(4, 6, 14, 0.82)',
 });

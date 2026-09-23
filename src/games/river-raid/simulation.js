@@ -43,9 +43,20 @@ import {
   segmentIndexFor,
   bankAt,
   depotForSegment,
+  bridgeForSegment,
 } from './terrain.js';
-import { enemyForSegment, createDepotEntity, createEnemyEntity } from './entities.js';
+import {
+  enemyForSegment,
+  createDepotEntity,
+  createEnemyEntity,
+  createBridgeEntity,
+} from './entities.js';
 import { drainFuel, refuel, isFuelEmpty } from './fuel.js';
+import {
+  scoreForTarget,
+  fuelBonus,
+  levelSpeedMultiplier,
+} from './progression.js';
 import {
   boxesOverlap,
   jetBox,
@@ -76,6 +87,10 @@ export function createInitialState(seed) {
     respawnGrace: 0,
     gameOver: false,
     gameOverReason: null,
+    score: 0,
+    level: 1,
+    bridgesDestroyed: 0,
+    checkpointY: null,
     bullet: null,
     entities: [],
     nextSpawnIndex: 0,
@@ -87,6 +102,16 @@ export function createInitialState(seed) {
     state.player.x,
     playerWorldY(state),
   );
+  return state;
+}
+
+// Resets an existing state object to a fresh run of the same seed. Mutating the
+// object in place (rather than returning a new one) lets the browser loop keep
+// its reference, and reuses the T-199 game-over state object for restart.
+export function restart(state) {
+  const fresh = createInitialState(state.seed);
+  for (const key of Object.keys(state)) delete state[key];
+  Object.assign(state, fresh);
   return state;
 }
 
@@ -103,6 +128,16 @@ function ensureSpawns(state, upToIndex) {
     ensureSegments(terrain, index + 2);
     const banks = bankAt(terrain, worldY);
 
+    // Level-checkpoint bridges sit on the segment boundary itself (T-200) and
+    // span the navigable river at that row.
+    const bridgeSpawn = bridgeForSegment(state.seed, index);
+    if (bridgeSpawn) {
+      const bridgeBanks = bankAt(terrain, bridgeSpawn.worldY);
+      state.entities.push(
+        createBridgeEntity(index, bridgeSpawn.worldY, bridgeBanks),
+      );
+    }
+
     const depotSpawn = depotForSegment(state.seed, index);
     if (depotSpawn) {
       state.entities.push(
@@ -110,7 +145,7 @@ function ensureSpawns(state, upToIndex) {
       );
     }
 
-    const enemySpawn = enemyForSegment(state.seed, index);
+    const enemySpawn = enemyForSegment(state.seed, index, state.level);
     if (enemySpawn) {
       state.entities.push(
         createEnemyEntity(state.seed, index, worldY, banks, enemySpawn),
@@ -188,14 +223,24 @@ function updateBullet(state, fire) {
   }
 }
 
-// A single bullet destroys the first enemy or depot it overlaps and is then
-// consumed. Depots therefore block bullets instead of letting them pass.
+// A single bullet destroys the first enemy, depot or bridge it overlaps and is
+// then consumed. Depots and bridges therefore block bullets instead of letting
+// them pass. Destroying a target awards its score; destroying a bridge also
+// advances the level, awards the fuel bonus and moves the respawn checkpoint.
 function resolveBulletHits(state) {
   if (!state.bullet) return;
   const target = findBulletTarget(state.entities, state.bullet);
   if (!target) return;
   state.entities.splice(state.entities.indexOf(target), 1);
   state.bullet = null;
+  state.score += scoreForTarget(target);
+
+  if (target.kind === 'bridge') {
+    state.bridgesDestroyed += 1;
+    state.level += 1;
+    state.score += fuelBonus(state.fuel);
+    state.checkpointY = target.worldY;
+  }
 }
 
 function despawnBehind(state) {
@@ -204,14 +249,17 @@ function despawnBehind(state) {
   state.entities = state.entities.filter((entity) => entity.worldY >= cutoff);
 }
 
-// Respawn placeholder: return the jet to the centre of the river at the start
-// of the current segment. Checkpoint respawn arrives with the progression
-// ticket. Enemies overlapping the respawn point are cleared so a crash cannot
-// immediately repeat.
+// Respawn the jet at the last destroyed bridge checkpoint once one has been
+// passed; before that it returns to the start of the current segment (the
+// T-199 placeholder). Enemies overlapping the respawn point are cleared so a
+// crash cannot immediately repeat.
 function respawn(state) {
   const worldY = playerWorldY(state);
-  const segmentStart = segmentIndexFor(worldY) * SEGMENT_HEIGHT;
-  state.scrollY = Math.max(0, segmentStart - PLAYER_SCREEN_Y);
+  const base =
+    state.checkpointY != null
+      ? state.checkpointY
+      : segmentIndexFor(worldY) * SEGMENT_HEIGHT;
+  state.scrollY = Math.max(0, base - PLAYER_SCREEN_Y);
   state.player.x = bankAt(state.terrain, playerWorldY(state)).center;
   state.player.collided = false;
   state.fuel = refuel();
@@ -238,8 +286,12 @@ function crash(state, reason) {
 }
 
 export function step(state, input = {}) {
-  // Game over freezes the simulation: no further frame advances or mutations.
-  if (state.gameOver) return state;
+  // Game over freezes the simulation: no further frame advances or mutations
+  // except an explicit restart, which resets this same state object in place.
+  if (state.gameOver) {
+    if (input.restart) restart(state);
+    return state;
+  }
 
   const left = Boolean(input.left);
   const right = Boolean(input.right);
@@ -250,10 +302,15 @@ export function step(state, input = {}) {
   state.time += FIXED_DT;
   if (state.respawnGrace > 0) state.respawnGrace -= 1;
 
+  // Level progression raises the baseline speed: both the cruise floor and the
+  // throttle ceiling scale with the level (capped in levelSpeedMultiplier).
+  const speedMultiplier = levelSpeedMultiplier(state.level);
+  const cruiseSpeed = CRUISE_SPEED * speedMultiplier;
+  const maxSpeed = MAX_SPEED * speedMultiplier;
   if (throttle) {
-    state.speed = Math.min(MAX_SPEED, state.speed + THROTTLE_ACCEL * FIXED_DT);
+    state.speed = Math.min(maxSpeed, state.speed + THROTTLE_ACCEL * FIXED_DT);
   } else {
-    state.speed = Math.max(CRUISE_SPEED, state.speed - COAST_DECEL * FIXED_DT);
+    state.speed = Math.max(cruiseSpeed, state.speed - COAST_DECEL * FIXED_DT);
   }
 
   const direction = (right ? 1 : 0) - (left ? 1 : 0);
@@ -303,10 +360,13 @@ export function step(state, input = {}) {
   return state;
 }
 
+// Runs `frames` fixed steps. `input` is either a plain input object or a
+// function (frame, state) -> input, so a driver may steer from state while
+// staying deterministic (identical state + frame yields identical input).
 export function advance(state, frames, input = {}) {
   const inputFor = typeof input === 'function' ? input : () => input;
   for (let frame = 0; frame < frames; frame += 1) {
-    step(state, inputFor(frame));
+    step(state, inputFor(frame, state));
   }
   return state;
 }

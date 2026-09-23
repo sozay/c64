@@ -19,7 +19,7 @@ export const GAMES = Object.freeze([
   Object.freeze({
     id: 'river-raid',
     title: 'River Raid',
-    available: false,
+    available: true,
     tagline: 'Navigate the river, dodge the banks.',
     year: 1982,
     genre: 'Shoot \u2019em up',

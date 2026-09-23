@@ -6,7 +6,6 @@
 // the DOM or calls Math.random.
 
 import {
-  ENEMY_CHANCE,
   ENEMY_COUNTER_BASE,
   HELICOPTER_COUNTER_BASE,
   HELICOPTER_HALF_WIDTH,
@@ -18,7 +17,9 @@ import {
   SHIP_HALF_HEIGHT,
   DEPOT_HALF_WIDTH,
   DEPOT_HALF_HEIGHT,
+  BRIDGE_HALF_HEIGHT,
 } from './constants.js';
+import { enemyChanceForLevel } from './progression.js';
 import { random01, randomBetween } from './prng.js';
 
 // Maps a 0..1 lateral fraction to a world x that keeps the entity fully inside
@@ -32,9 +33,11 @@ export function lateralX(banks, halfWidth, lateral) {
 }
 
 // Returns null or { type: 'ship' | 'helicopter', lateral } for one segment.
-export function enemyForSegment(seed, index) {
+// `level` scales the spawn chance (T-200): level 1 reproduces the T-199
+// density, and higher levels add more obstacles.
+export function enemyForSegment(seed, index, level = 1) {
   const roll = random01(seed, ENEMY_COUNTER_BASE + index * 4);
-  if (roll >= ENEMY_CHANCE) return null;
+  if (roll >= enemyChanceForLevel(level)) return null;
   const typeRoll = random01(seed, ENEMY_COUNTER_BASE + index * 4 + 1);
   const lateral = random01(seed, ENEMY_COUNTER_BASE + index * 4 + 2);
   return {
@@ -52,6 +55,23 @@ export function createDepotEntity(index, worldY, banks, spawn) {
     x: lateralX(banks, DEPOT_HALF_WIDTH, spawn.lateral),
     halfWidth: DEPOT_HALF_WIDTH,
     halfHeight: DEPOT_HALF_HEIGHT,
+    dir: 0,
+    used: false,
+  };
+}
+
+// A bridge spans the whole navigable river at a segment boundary. It never
+// collides with the jet (only enemies do), but it blocks and is destroyed by
+// the first bullet that reaches it, advancing the level.
+export function createBridgeEntity(index, worldY, banks) {
+  return {
+    uid: index,
+    kind: 'bridge',
+    type: 'bridge',
+    worldY,
+    x: banks.center,
+    halfWidth: Math.max(1, (banks.right - banks.left) / 2),
+    halfHeight: BRIDGE_HALF_HEIGHT,
     dir: 0,
     used: false,
   };

@@ -13,10 +13,12 @@ const KEY_ACTIONS = Object.freeze({
   KeyW: 'throttle',
   Space: 'fire',
   KeyJ: 'fire',
+  Enter: 'restart',
+  KeyR: 'restart',
 });
 
 export function createInputState() {
-  return { left: false, right: false, throttle: false, fire: false };
+  return { left: false, right: false, throttle: false, fire: false, restart: false };
 }
 
 export function mapKey(code) {
@@ -47,6 +49,7 @@ export function attachKeyboard(target, state = createInputState()) {
     state.right = false;
     state.throttle = false;
     state.fire = false;
+    state.restart = false;
   };
 
   target.addEventListener('keydown', onKeyDown);

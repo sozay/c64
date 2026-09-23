@@ -7,6 +7,7 @@ import {
   createInitialState,
   step,
   advance,
+  restart,
   playerWorldY,
   detectBankCollision,
 } from './simulation.js';
@@ -18,6 +19,7 @@ export {
   createInitialState,
   step,
   advance,
+  restart,
   playerWorldY,
   detectBankCollision,
   hashState,
@@ -29,6 +31,7 @@ export const riverRaid = Object.freeze({
   createInitialState,
   step,
   advance,
+  restart,
   hashState,
 });
 

@@ -18,7 +18,8 @@
 //   --json           print a JSON object instead of the key=value line
 //   --help           print this usage
 
-import { riverRaid } from '../src/games/river-raid/index.js';
+import { riverRaid, playerWorldY } from '../src/games/river-raid/index.js';
+import { bankAt } from '../src/games/river-raid/terrain.js';
 
 const GAMES = {
   [riverRaid.id]: riverRaid,
@@ -32,6 +33,7 @@ const INPUT_MODES = [
   'mixed',
   'fire',
   'combat',
+  'pilot',
 ];
 
 const USAGE = `Headless River Raid simulation driver.
@@ -95,6 +97,20 @@ function makeInput(mode) {
       return (frame) => {
         const steer = Math.floor(frame / 45) % 2 === 0 ? 'left' : 'right';
         return { throttle: true, fire: true, [steer]: true };
+      };
+    // State-aware autopilot: steer toward the river centre, hold throttle and
+    // keep firing. It is a pure function of (frame, state), so the run stays
+    // deterministic and exercises bridges, levels and scoring headlessly.
+    case 'pilot':
+      return (frame, state) => {
+        const banks = bankAt(state.terrain, playerWorldY(state));
+        const dx = banks.center - state.player.x;
+        return {
+          throttle: true,
+          fire: true,
+          left: dx < -2,
+          right: dx > 2,
+        };
       };
     default:
       throw new Error(
@@ -164,8 +180,13 @@ function main() {
         lives: state.lives,
         gameOver: state.gameOver,
         gameOverReason: state.gameOverReason,
+        score: state.score,
+        level: state.level,
+        bridgesDestroyed: state.bridgesDestroyed,
+        checkpointY: state.checkpointY,
         enemies: state.entities.filter((entity) => entity.kind === 'enemy').length,
         depots: state.entities.filter((entity) => entity.kind === 'depot').length,
+        bridges: state.entities.filter((entity) => entity.kind === 'bridge').length,
         bullet: state.bullet ? { x: state.bullet.x, worldY: state.bullet.worldY } : null,
       })}\n`,
     );
