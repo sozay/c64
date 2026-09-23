@@ -1,0 +1,10 @@
+# theticket-manager:start
+# Ticket Manager machine-local configuration and runtime state
+.theticket/local.json
+.theticket/state.json
+# theticket-manager:end
+
+# Node / Vite build output
+node_modules/
+dist/
+
