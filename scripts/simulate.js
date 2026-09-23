@@ -24,7 +24,15 @@ const GAMES = {
   [riverRaid.id]: riverRaid,
 };
 
-const INPUT_MODES = ['neutral', 'left', 'right', 'throttle', 'mixed'];
+const INPUT_MODES = [
+  'neutral',
+  'left',
+  'right',
+  'throttle',
+  'mixed',
+  'fire',
+  'combat',
+];
 
 const USAGE = `Headless River Raid simulation driver.
 
@@ -80,6 +88,13 @@ function makeInput(mode) {
       return (frame) => {
         const steer = Math.floor(frame / 60) % 2 === 0 ? 'left' : 'right';
         return { throttle: true, [steer]: true };
+      };
+    case 'fire':
+      return () => ({ fire: true });
+    case 'combat':
+      return (frame) => {
+        const steer = Math.floor(frame / 45) % 2 === 0 ? 'left' : 'right';
+        return { throttle: true, fire: true, [steer]: true };
       };
     default:
       throw new Error(
@@ -145,6 +160,13 @@ function main() {
         playerX: state.player.x,
         collided: state.player.collided,
         segments: state.terrain.segments.length,
+        fuel: state.fuel,
+        lives: state.lives,
+        gameOver: state.gameOver,
+        gameOverReason: state.gameOverReason,
+        enemies: state.entities.filter((entity) => entity.kind === 'enemy').length,
+        depots: state.entities.filter((entity) => entity.kind === 'depot').length,
+        bullet: state.bullet ? { x: state.bullet.x, worldY: state.bullet.worldY } : null,
       })}\n`,
     );
     return;

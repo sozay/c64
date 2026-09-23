@@ -57,6 +57,34 @@ as a cyberpunk C64/Amiga demo screen — dark palette, neon cyan/magenta glow on
 the title and focused card, period display/mono typography, and a visible CRT
 scanline overlay.
 
+## River Raid gameplay
+
+The fuel/combat layer lives in `src/games/river-raid/` on top of the pure
+simulation core: terrain-placed fuel depots, ships and helicopters, a single
+bullet in flight, lives, and a game-over placeholder. Everything is a pure
+function of the seed plus the input sequence, so `scripts/simulate.js` can
+fingerprint it:
+
+```sh
+node scripts/simulate.js --game river-raid --seed 7 --frames 7200
+# two runs with the same seed and input print an identical hash
+```
+
+Portal integration is T-202's scope, so the game is reachable through the dev
+harness at `/game.html` while the home page stays the default entry:
+
+```sh
+npm run dev        # then open http://localhost:5173/game.html
+```
+
+Controls: arrow keys / `A`-`D` steer, `Up` / `W` throttle, `Space` (or `J`)
+fires. The harness prints a `FUEL`/`LIVES` readout and the game-over reason;
+the simulation itself keeps no HUD. Flying over a depot refuels the tank once,
+a bullet is consumed by the first enemy or depot it hits, and a crash (bank,
+enemy, or empty tank) costs a life and respawns the jet over the river at the
+current segment. `npm run dev` is the documented manual check: fly, shoot,
+destroy targets, refuel, crash, and reach the game-over placeholder.
+
 ## Conventions
 
 - Tests live in `tests/` and use the built-in `node:test` runner.

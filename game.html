@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>c64 &mdash; River Raid (dev harness)</title>
+  </head>
+  <body>
+    <div class="scanlines" aria-hidden="true"></div>
+    <main id="app">
+      <h1 class="portal__title">RIVER RAID</h1>
+      <p class="portal__subtitle">
+        Arrow keys / A-D steer, Up / W throttle, Space (or J) fires.
+      </p>
+      <canvas
+        id="game-canvas"
+        width="640"
+        height="400"
+        aria-label="River Raid game surface"
+      ></canvas>
+      <p id="game-status" role="status" aria-live="polite">Flying&hellip;</p>
+    </main>
+    <script type="module" src="/src/game-dev.js"></script>
+  </body>
+</html>

@@ -48,6 +48,26 @@ export function render(context, state) {
     context.fillRect(banks.right, screenTop, 2, bandHeight);
   }
 
+  for (const entity of state.entities) {
+    const screenY = entity.worldY - state.scrollY;
+    if (screenY < -SEGMENT_HEIGHT || screenY > WORLD_HEIGHT + SEGMENT_HEIGHT) {
+      continue;
+    }
+    if (entity.kind === 'depot') drawDepot(context, entity, screenY);
+    else drawEnemy(context, entity, screenY);
+  }
+
+  if (state.bullet) {
+    const bulletY = state.bullet.worldY - state.scrollY;
+    context.fillStyle = COLORS.bullet;
+    context.fillRect(
+      state.bullet.x - 2,
+      bulletY - 6,
+      4,
+      12,
+    );
+  }
+
   const { x, collided } = state.player;
   context.fillStyle = collided ? COLORS.jetCollided : COLORS.jet;
   context.beginPath();
@@ -64,4 +84,37 @@ export function render(context, state) {
     3,
     4,
   );
+}
+
+function drawDepot(context, entity, screenY) {
+  const { x, halfWidth, halfHeight, used } = entity;
+  context.fillStyle = used ? COLORS.depotUsed : COLORS.depot;
+  context.fillRect(x - halfWidth, screenY - halfHeight, halfWidth * 2, halfHeight * 2);
+  context.fillStyle = COLORS.sky;
+  context.fillRect(x - halfWidth + 3, screenY - halfHeight + 3, halfWidth * 2 - 6, halfHeight * 2 - 6);
+  context.fillStyle = used ? COLORS.depotUsed : COLORS.depot;
+  context.fillRect(x - 2, screenY - halfHeight + 3, 4, halfHeight * 2 - 6);
+}
+
+function drawEnemy(context, entity, screenY) {
+  const { x, halfWidth, halfHeight, type } = entity;
+
+  if (type === 'helicopter') {
+    context.fillStyle = COLORS.helicopterAccent;
+    context.fillRect(x - halfWidth - 4, screenY - halfHeight - 4, halfWidth * 2 + 8, 2);
+    context.fillStyle = COLORS.helicopter;
+    context.fillRect(x - halfWidth, screenY - halfHeight, halfWidth * 2, halfHeight * 2);
+    return;
+  }
+
+  context.fillStyle = COLORS.shipAccent;
+  context.fillRect(x - halfWidth, screenY + halfHeight - 3, halfWidth * 2, 3);
+  context.fillStyle = COLORS.ship;
+  context.beginPath();
+  context.moveTo(x - halfWidth, screenY + halfHeight - 3);
+  context.lineTo(x + halfWidth, screenY + halfHeight - 3);
+  context.lineTo(x + halfWidth - 3, screenY - halfHeight);
+  context.lineTo(x - halfWidth + 3, screenY - halfHeight);
+  context.closePath();
+  context.fill();
 }

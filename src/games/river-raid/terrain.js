@@ -14,8 +14,10 @@ import {
   MAX_CENTER_STEP,
   RIVER_MARGIN,
   INITIAL_SEGMENTS,
+  DEPOT_CHANCE,
+  DEPOT_COUNTER_BASE,
 } from './constants.js';
-import { randomBetween, clamp, lerp } from './prng.js';
+import { randomBetween, random01, clamp, lerp } from './prng.js';
 
 const DEFAULT_CENTER = WORLD_WIDTH / 2;
 const DEFAULT_WIDTH = (MIN_RIVER_WIDTH + MAX_RIVER_WIDTH) / 2;
@@ -68,6 +70,18 @@ export function generateTerrain(seed, segmentCount) {
 
 export function segmentIndexFor(worldY) {
   return Math.max(0, Math.floor(worldY / SEGMENT_HEIGHT));
+}
+
+// The terrain generator places fuel depots on river segments. Placement is a
+// pure function of (seed, segment index): the same seed always yields the same
+// depots, so the combat layer stays deterministic. The returned `lateral` is a
+// 0..1 fraction across the navigable river at that segment (0 = left bank,
+// 1 = right bank); null means the segment has no depot.
+export function depotForSegment(seed, index) {
+  const roll = random01(seed, DEPOT_COUNTER_BASE + index * 4);
+  if (roll >= DEPOT_CHANCE) return null;
+  const lateral = random01(seed, DEPOT_COUNTER_BASE + index * 4 + 1);
+  return { lateral };
 }
 
 // Returns the interpolated river cross-section at a world row. This read may

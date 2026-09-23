@@ -15,18 +15,26 @@ import {
   PLAYER_HALF_WIDTH,
   CRUISE_SPEED,
   MAX_SPEED,
+  INITIAL_LIVES,
 } from '../src/games/river-raid/constants.js';
 
-test('jet horizontal movement is bounded by the world edges', () => {
-  const left = advance(createInitialState(7), 600, { left: true });
-  assert.equal(left.player.x, PLAYER_HALF_WIDTH);
-
-  const right = advance(createInitialState(7), 600, { right: true });
-  assert.equal(right.player.x, WORLD_WIDTH - PLAYER_HALF_WIDTH);
+test('jet horizontal movement stays within the world bounds', () => {
+  for (const steer of ['left', 'right']) {
+    const state = createInitialState(7);
+    for (let frame = 0; frame < 600; frame += 1) {
+      step(state, { [steer]: true });
+      assert.ok(state.player.x >= PLAYER_HALF_WIDTH - 1e-9);
+      assert.ok(state.player.x <= WORLD_WIDTH - PLAYER_HALF_WIDTH + 1e-9);
+    }
+  }
 });
 
 test('throttle raises speed toward the maximum and release decays to cruise', () => {
   const state = createInitialState(7);
+  // Keep plenty of lives so crashes (which respawn but never change speed)
+  // cannot freeze the run via the game-over placeholder during the long
+  // coast phase; this test isolates the throttle/coast speed rule.
+  state.lives = 1000;
   assert.equal(state.speed, CRUISE_SPEED);
 
   advance(state, 120, { throttle: true });
@@ -55,13 +63,19 @@ test('bank collision is detected over land and clear over water', () => {
   assert.equal(detectBankCollision(state.terrain, banks.center, worldY), false);
 });
 
-test('step flags a collision once the jet is over the bank', () => {
+test('a bank collision costs a life and respawns the jet over water', () => {
   const state = createInitialState(7);
   const banks = bankAt(state.terrain, playerWorldY(state));
   state.player.x = Math.max(PLAYER_HALF_WIDTH, banks.left - 20);
 
   step(state, {});
-  assert.equal(state.player.collided, true);
+
+  assert.equal(state.lives, INITIAL_LIVES - 1);
+  assert.equal(state.player.collided, false, 'respawn clears the collision flag');
+
+  const respawnBanks = bankAt(state.terrain, playerWorldY(state));
+  assert.ok(state.player.x > respawnBanks.left);
+  assert.ok(state.player.x < respawnBanks.right);
 });
 
 test('step is deterministic and does not mutate its input', () => {

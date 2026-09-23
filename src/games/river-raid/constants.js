@@ -25,6 +25,51 @@ export const THROTTLE_ACCEL = 260;
 export const COAST_DECEL = 120;
 export const LATERAL_SPEED = 150;
 
+// Fuel layer (T-199). Fuel drains continuously and is restored to full by
+// flying over a depot; an empty tank is a crash cause.
+export const FUEL_MAX = 100;
+export const FUEL_DRAIN_PER_SEC = 2;
+
+// Fuel depots. Placement is a pure function of the seed and the segment index
+// (see terrain.depotForSegment); DEPOT_CHANCE is the per-segment probability.
+export const DEPOT_CHANCE = 0.22;
+export const DEPOT_HALF_WIDTH = 12;
+export const DEPOT_HALF_HEIGHT = 10;
+export const DEPOT_COUNTER_BASE = 0x10000000;
+
+// Enemies. Spawn placement is a pure function of the seed and segment index
+// (see entities.enemyForSegment); direction changes are seed-determined.
+export const ENEMY_CHANCE = 0.35;
+export const ENEMY_COUNTER_BASE = 0x20000000;
+export const HELICOPTER_COUNTER_BASE = 0x30000000;
+export const SHIP_SHARE = 0.5;
+export const SHIP_HALF_WIDTH = 12;
+export const SHIP_HALF_HEIGHT = 8;
+export const SHIP_LATERAL_SPEED = 30;
+export const HELICOPTER_HALF_WIDTH = 10;
+export const HELICOPTER_HALF_HEIGHT = 8;
+export const HELICOPTER_LATERAL_SPEED = 70;
+export const HELICOPTER_MIN_CHANGE_FRAMES = 45;
+export const HELICOPTER_MAX_CHANGE_FRAMES = 150;
+
+// Single bullet. Only one shot may be in flight at a time.
+export const BULLET_SPEED = 420;
+export const BULLET_HALF_WIDTH = 2;
+export const BULLET_HALF_HEIGHT = 6;
+
+// Lives and respawn. Respawn here is a placeholder (current segment's river
+// centre); checkpoint respawn arrives with the progression ticket.
+export const INITIAL_LIVES = 3;
+
+// After a respawn the jet is briefly immune to enemy collisions so a crash
+// cannot immediately repeat; the bank and fuel rules still apply.
+export const RESPAWN_INVULNERABLE_FRAMES = 90;
+
+// Entity lifecycle. Spawns are generated ahead of the leading edge and dropped
+// once they scroll behind the trailing edge.
+export const SPAWN_AHEAD_SEGMENTS = 4;
+export const DESPAWN_MARGIN = 40;
+
 export const COLORS = Object.freeze({
   sky: '#0a0a12',
   land: '#2f6b2f',
@@ -34,4 +79,11 @@ export const COLORS = Object.freeze({
   jet: '#e8e8f0',
   jetAccent: '#f2b134',
   jetCollided: '#e05050',
+  depot: '#f2b134',
+  depotUsed: '#6f5f34',
+  ship: '#c8c8dc',
+  shipAccent: '#7a7a98',
+  helicopter: '#d29aec',
+  helicopterAccent: '#8a5aa8',
+  bullet: '#f6f6b0',
 });
