@@ -9,14 +9,23 @@ import './styles/tokens.css';
 import './styles/base.css';
 import { selectElement } from './core/dom.js';
 import { mount } from './games/river-raid/index.js';
+import { createAudio } from './games/river-raid/audio.js';
 
 const canvas = selectElement('#game-canvas');
 const status = selectElement('#game-status');
 
-const game = mount(canvas, { seed: 7 });
+// The audio module is created here, in the browser entry, so the headless
+// simulation driver's import graph never contains WebAudio (T-201).
+const audio = createAudio();
+const audioControls = audio.attachControls(globalThis);
 
-// Exposed for manual/console inspection during development.
+const game = mount(canvas, { seed: 7, audio });
+
+// Exposed for manual/console inspection during development and by the
+// Playwright autoplay-guard test.
 globalThis.__riverRaid = game;
+globalThis.__riverRaidAudio = audio;
+globalThis.__riverRaidAudioControls = audioControls;
 
 function report() {
   const { state } = game;
@@ -25,7 +34,8 @@ function report() {
     status.textContent = `GAME OVER (${state.gameOverReason}) \u2014 FINAL SCORE ${state.score} \u2014 press Enter to restart.`;
   } else {
     status.dataset.status = 'playing';
-    status.textContent = `SCORE ${state.score} \u00b7 LEVEL ${state.level} \u00b7 FUEL ${Math.round(state.fuel)} \u00b7 LIVES ${state.lives}`;
+    const sound = audio.isMuted() ? 'SOUND MUTED (M)' : 'SOUND ON (M)';
+    status.textContent = `SCORE ${state.score} \u00b7 LEVEL ${state.level} \u00b7 FUEL ${Math.round(state.fuel)} \u00b7 LIVES ${state.lives} \u00b7 ${sound}`;
   }
   requestAnimationFrame(report);
 }

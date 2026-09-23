@@ -14,6 +14,7 @@ import {
 import { hashState } from './hash.js';
 import { createRenderer } from './render.js';
 import { attachKeyboard } from './input.js';
+import { drainSoundEvents } from './sound-events.js';
 
 export {
   createInitialState,
@@ -37,7 +38,12 @@ export const riverRaid = Object.freeze({
 
 // Browser entry: runs the fixed-timestep simulation with an accumulator and
 // draws each display frame. Not called by the headless driver.
-export function mount(canvas, { seed = 7 } = {}) {
+//
+// `audio` is an optional render-layer adapter (see audio.js). The browser entry
+// injects it so this module never imports WebAudio itself: the headless driver
+// shares this module and must have no audio code in its import graph. The
+// adapter receives the drained sound-event queue once per display frame.
+export function mount(canvas, { seed = 7, audio = null } = {}) {
   const renderer = createRenderer(canvas);
   const keyboard = attachKeyboard(globalThis);
   const state = createInitialState(seed);
@@ -55,6 +61,7 @@ export function mount(canvas, { seed = 7 } = {}) {
       step(state, keyboard.state);
       accumulator -= FIXED_STEP_MS;
     }
+    if (audio) audio.handleEvents(drainSoundEvents(state), state);
     renderer.draw(state);
     frameHandle = requestAnimationFrame(loop);
   };
@@ -65,6 +72,7 @@ export function mount(canvas, { seed = 7 } = {}) {
     state,
     renderer,
     keyboard,
+    audio,
     stop() {
       running = false;
       cancelAnimationFrame(frameHandle);

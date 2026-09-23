@@ -12,8 +12,20 @@ runtime dependencies beyond the Vite dev/build tooling.
 | `npm install` | Install Vite (the only dev dependency). |
 | `npm run dev` | Start the Vite dev server with hot reload. |
 | `npm test` | Run the headless `node:test` suite. |
+| `npm run test:browser` | Run the Playwright browser tests (autoplay guard, mute persistence). |
 | `npm run build` | Build the static production bundle into `dist/`. |
 | `npm run preview` | Serve the built `dist/` bundle locally. |
+
+Playwright is the chain's browser-test tool. Install its Chromium once after
+`npm install`:
+
+```sh
+npx playwright install chromium
+npm run test:browser
+```
+
+`@playwright/test` is pinned to `1.59.0`: newer releases dropped the bundled
+Chromium build for macOS 13.
 
 Verify the production build renders when served statically:
 
@@ -32,6 +44,7 @@ src/
   core/               # shared helpers (e.g. dom.js)
   portal/             # home page view, game registry, keyboard navigation
   games/              # game modules, starting with River Raid (T-198..T-201)
+    river-raid/       # pure simulation + render, input, sound-events and audio adapters
   styles/
     tokens.css        # design-token CSS custom properties (palette, type, spacing)
     base.css          # baseline layout consuming the tokens
@@ -102,6 +115,29 @@ use the state-aware autopilot input:
 node scripts/simulate.js --game river-raid --seed 7 --frames 7200 --input pilot --json
 # reports score, level, bridgesDestroyed, checkpointY and bridges in the JSON
 ```
+
+## River Raid sound (T-201)
+
+Sound is WebAudio-only: every effect is synthesized with oscillators, gain
+envelopes and noise buffers, so there are no audio asset files and no runtime
+dependencies. `src/games/river-raid/audio.js` is imported by the browser entry
+(`src/game-dev.js`) only; the headless driver's import graph never contains it,
+which keeps sound render-layer only.
+
+The simulation emits plain-data sound events (shoot, destroy, refuel, engine
+speed) onto `state.soundEvents`. The queue is drained once per display frame by
+the audio adapter and is deliberately excluded from `hashState`, so the
+deterministic state hash is unchanged (see `tests/river-raid-sound-events.test.js`).
+
+Autoplay guard: no `AudioContext` is created until the first user gesture (a key
+press or pointer press), and a muted layer never creates one. `M` toggles mute
+and the preference is persisted in `localStorage` (`river-raid.audio.muted`), so
+it survives a reload. The dev-harness status line shows the current sound state.
+
+Manual check with `npm run dev` (open `/game.html`): the first key press starts
+the engine hum; firing, explosions and refuel play as you fly; `M` mutes and
+unmutes and the preference survives a reload. The automated checks live in
+`tests/browser/river-raid-audio.spec.js` (`npm run test:browser`).
 
 ## Conventions
 

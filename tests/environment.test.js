@@ -19,9 +19,15 @@ test('package is an ES module project', () => {
   assert.equal(packageJson.type, 'module');
 });
 
-test('no runtime dependencies beyond Vite tooling', () => {
-  assert.deepEqual(packageJson.dependencies ?? {}, {});
-  assert.deepEqual(Object.keys(packageJson.devDependencies ?? {}), ['vite']);
+test('no runtime dependencies and only the documented dev tooling', () => {
+  assert.deepEqual(packageJson.dependencies ?? {}, {}, 'runtime dependencies stay empty');
+  // Vite is the dev/build tooling; Playwright is the chain's documented
+  // browser-test tool introduced by T-201 and reused by T-202/T-203. Any other
+  // dependency must be an explicit, reviewed decision.
+  assert.deepEqual(
+    Object.keys(packageJson.devDependencies ?? {}).sort(),
+    ['@playwright/test', 'vite'],
+  );
 });
 
 test('npm test runs the node:test harness', () => {

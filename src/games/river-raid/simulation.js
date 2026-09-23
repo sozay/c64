@@ -64,6 +64,11 @@ import {
   findJetEnemy,
   findRefuelDepot,
 } from './combat.js';
+import {
+  SOUND_EVENT,
+  emitSoundEvent,
+  engineSpeedBucket,
+} from './sound-events.js';
 
 export function playerWorldY(state) {
   return state.scrollY + PLAYER_SCREEN_Y;
@@ -96,6 +101,11 @@ export function createInitialState(seed) {
     nextSpawnIndex: 0,
     player: { x: WORLD_WIDTH / 2, collided: false },
     terrain: createTerrain(normalizedSeed),
+    // Render-layer sound queue (T-201): pure plain-data events drained by the
+    // browser audio adapter. Excluded from hashState, so determinism is
+    // unaffected; see sound-events.js.
+    soundEvents: [],
+    engineBucket: null,
   };
   state.player.collided = detectBankCollision(
     state.terrain,
@@ -220,6 +230,11 @@ function updateBullet(state, fire) {
       halfWidth: BULLET_HALF_WIDTH,
       halfHeight: BULLET_HALF_HEIGHT,
     };
+    emitSoundEvent(state, {
+      type: SOUND_EVENT.SHOOT,
+      x: state.bullet.x,
+      worldY: state.bullet.worldY,
+    });
   }
 }
 
@@ -234,6 +249,13 @@ function resolveBulletHits(state) {
   state.entities.splice(state.entities.indexOf(target), 1);
   state.bullet = null;
   state.score += scoreForTarget(target);
+  emitSoundEvent(state, {
+    type: SOUND_EVENT.DESTROY,
+    kind: target.kind,
+    targetType: target.type,
+    x: target.x,
+    worldY: target.worldY,
+  });
 
   if (target.kind === 'bridge') {
     state.bridgesDestroyed += 1;
@@ -313,6 +335,17 @@ export function step(state, input = {}) {
     state.speed = Math.max(cruiseSpeed, state.speed - COAST_DECEL * FIXED_DT);
   }
 
+  // Engine hum (T-201) tracks the scroll speed. Emit only on a bucket change so
+  // a steady speed does not flood the queue with redundant events.
+  const engineBucket = engineSpeedBucket(state.speed);
+  if (engineBucket !== state.engineBucket) {
+    state.engineBucket = engineBucket;
+    emitSoundEvent(state, {
+      type: SOUND_EVENT.ENGINE,
+      speed: state.speed,
+    });
+  }
+
   const direction = (right ? 1 : 0) - (left ? 1 : 0);
   state.player.x = clamp(
     state.player.x + direction * LATERAL_SPEED * FIXED_DT,
@@ -340,6 +373,11 @@ export function step(state, input = {}) {
   if (depot) {
     state.fuel = refuel();
     depot.used = true;
+    emitSoundEvent(state, {
+      type: SOUND_EVENT.REFUEL,
+      x: depot.x,
+      worldY: depot.worldY,
+    });
   }
 
   const bankHit = detectBankCollision(state.terrain, state.player.x, worldY);
